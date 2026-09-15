@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>趣味幸運轉盤</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f7f6;
+            margin-top: 30px;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            margin: 20px auto;
+        }
+        /* 指針 (固定在上方) */
+        .pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 30px solid #d9534f;
+            z-index: 10;
+        }
+        /* 轉盤本體 - 維持 1 秒動畫 */
+        canvas {
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: transform 1s cubic-bezier(0.15, 0.85, 0.15, 1);
+        }
+        button {
+            padding: 12px 25px;
+            font-size: 18px;
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            background-color: #4cae4c;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #result {
+            font-size: 22px;
+            font-weight: bold;
+            color: #d9534f;
+            margin-top: 20px;
+            min-height: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎉 幸運大抽獎 🎉</h1>
+    <p>獎品：十色筆、卡通膠擦、立體迷宮、小筆記本、貼紙</p>
+    
+    <div class="container">
+        <div class="pointer"></div>
+        <canvas id="wheel" width="320" height="320"></canvas>
+    </div>
+    
+    <button id="spinBtn" onclick="spinWheel()">開始轉動！</button>
+    <div id="result"></div>
+
+    <script>
+        // 1. 畫面上顯示的 5 個原始獎項（外觀維持 5 等分）
+        const displayPrizes = ["十色筆", "卡通膠擦", "立體迷宮", "小筆記本", "貼紙"];
+        const colors = ["#FF6B6B", "#4ECDC4", "#FFD166", "#06D6A0", "#118AB2"];
+        
+        const canvas = document.getElementById("wheel");
+        const ctx = canvas.getContext("2d");
+        const totalSlices = displayPrizes.length;
+        const arcSize = 360 / totalSlices; // 每個扇形 72 度
+        
+        let currentRotation = 0; // 記錄累計旋轉角度
+
+        // 繪製轉盤（只畫 5 個區塊，視覺上完全隱藏機率數據）
+        function drawWheel() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const center = canvas.width / 2;
+            const radius = center;
+
+            for (let i = 0; i < totalSlices; i++) {
+                const startAngle = (i * arcSize - 90) * Math.PI / 180;
+                const endAngle = ((i + 1) * arcSize - 90) * Math.PI / 180;
+                
+                // 繪製扇形
+                ctx.beginPath();
+                ctx.fillStyle = colors[i];
+                ctx.moveTo(center, center);
+                ctx.arc(center, center, radius, startAngle, endAngle);
+                ctx.lineTo(center, center);
+                ctx.fill();
+                ctx.stroke();
+
+                // 繪製文字
+                ctx.save();
+                ctx.translate(center, center);
+                const textAngle = ((i + 0.5) * arcSize - 90) * Math.PI / 180;
+                ctx.rotate(textAngle);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold 15px Arial";
+                ctx.fillText(displayPrizes[i], radius - 20, 6);
+                ctx.restore();
+            }
+        }
+
+        // 初始化繪製
+        drawWheel();
+
+        function spinWheel() {
+            const btn = document.getElementById("spinBtn");
+            const resultDiv = document.getElementById("result");
+            
+            btn.disabled = true;
+            resultDiv.innerText = "轉動中...";
+
+            // 2. 透過加權隨機池來控制中獎機率（表面上看不出來，但增加貼紙與小筆記本權重的出現率）
+            // 權重分配：十色筆(1), 卡通膠擦(1), 立體迷宮(1), 小筆記本(3), 貼紙(3)
+            const weightedPool = [0, 1, 2, 3, 3, 3, 4, 4, 4];
+            const winningIndex = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+            
+            // 3. 計算該扇形中心點在轉盤上的目標角度
+            const prizeCenterAngle = winningIndex * arcSize + arcSize / 2;
+            
+            // 4. 計算轉動角度（1 秒動畫，保留 3 圈旋轉）
+            const extraSpins = 360 * 3;
+            const targetRotation = extraSpins + (360 - prizeCenterAngle);
+            
+            const normalizedCurrent = currentRotation % 360;
+            const diff = targetRotation - normalizedCurrent;
+            currentRotation += (diff > 0 ? diff : diff + 360) + (360 * 2);
+
+            canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+            // 5. 動畫結束後顯示結果 (1 秒後)
+            setTimeout(() => {
+                btn.disabled = false;
+                resultDiv.innerText = `🎊 恭喜獲得：${displayPrizes[winningIndex]}！ 🎊`;
+            }, 1000);
+        }
+    </script>
+
+</body>
+</html>
