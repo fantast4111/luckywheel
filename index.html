@@ -32,13 +32,13 @@
             border-top: 30px solid #d9534f;
             z-index: 10;
         }
-        /* 轉盤本體 - 維持 1 秒動畫 */
+        /* 轉盤本體 - 1 秒動畫 */
         canvas {
             border-radius: 50%;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             transition: transform 1s cubic-bezier(0.15, 0.85, 0.15, 1);
         }
-        button {
+        button.spin-btn {
             padding: 12px 25px;
             font-size: 18px;
             background-color: #5cb85c;
@@ -49,19 +49,61 @@
             margin-top: 20px;
             box-shadow: 0 3px 6px rgba(0,0,0,0.1);
         }
-        button:hover {
+        button.spin-btn:hover {
             background-color: #4cae4c;
         }
-        button:disabled {
+        button.spin-btn:disabled {
             background-color: #ccc;
             cursor: not-allowed;
         }
-        #result {
-            font-size: 22px;
-            font-weight: bold;
+
+        /* 彈跳視窗（Modal）樣式 */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 100; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.5); 
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 30px 50px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transform: scale(0.7);
+            animation: popupAnim 0.3s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popupAnim {
+            to { transform: scale(1); }
+        }
+        .modal-content h2 {
             color: #d9534f;
-            margin-top: 20px;
-            min-height: 30px;
+            margin-top: 0;
+            font-size: 28px;
+        }
+        .modal-content p {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin: 20px 0;
+        }
+        .close-btn {
+            padding: 8px 20px;
+            font-size: 16px;
+            background-color: #f0ad4e;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .close-btn:hover {
+            background-color: #ec971f;
         }
     </style>
 </head>
@@ -75,22 +117,43 @@
         <canvas id="wheel" width="320" height="320"></canvas>
     </div>
     
-    <button id="spinBtn" onclick="spinWheel()">開始轉動！</button>
-    <div id="result"></div>
+    <button id="spinBtn" class="spin-btn" onclick="spinWheel()">開始轉動！</button>
+
+    <!-- 中獎彈跳視窗 -->
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <h2>🎊 中獎通知 🎊</h2>
+            <p id="modalText"></p>
+            <button class="close-btn" onclick="closeModal()">太棒了！</button>
+        </div>
+    </div>
 
     <script>
-        // 1. 畫面上顯示的 5 個原始獎項（外觀維持 5 等分）
-        const displayPrizes = ["十色筆", "卡通膠擦", "立體迷宮", "小筆記本", "貼紙"];
-        const colors = ["#FF6B6B", "#4ECDC4", "#FFD166", "#06D6A0", "#118AB2"];
-        
+        /* 
+          ========================================
+          🎁 獎品與權重設定區 (可隨時在此自由修改)
+          ========================================
+          - name: 獎品名稱
+          - color: 轉盤上的扇形顏色
+          - weight: 權重數值（數值越高，抽中的機會越大！不需考慮總和比例，系統會自動計算）
+        */
+        const prizesConfig = [
+            { name: "十色筆",   color: "#FF6B6B", weight: 4 },
+            { name: "卡通膠擦", color: "#4ECDC4", weight: 2 },
+            { name: "立體迷宮", color: "#FFD166", weight: 2 },
+            { name: "小筆記本", color: "#06D6A0", weight: 3 }, 
+            { name: "刮刮畫本", color: "#06D6A0", weight: 1 }, 
+            { name: "貼紙",     color: "#118AB2", weight: 4 } 
+        ];
+
         const canvas = document.getElementById("wheel");
         const ctx = canvas.getContext("2d");
-        const totalSlices = displayPrizes.length;
-        const arcSize = 360 / totalSlices; // 每個扇形 72 度
+        const totalSlices = prizesConfig.length;
+        const arcSize = 360 / totalSlices;
         
-        let currentRotation = 0; // 記錄累計旋轉角度
+        let currentRotation = 0;
 
-        // 繪製轉盤（只畫 5 個區塊，視覺上完全隱藏機率數據）
+        // 繪製轉盤
         function drawWheel() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             const center = canvas.width / 2;
@@ -102,7 +165,7 @@
                 
                 // 繪製扇形
                 ctx.beginPath();
-                ctx.fillStyle = colors[i];
+                ctx.fillStyle = prizesConfig[i].color;
                 ctx.moveTo(center, center);
                 ctx.arc(center, center, radius, startAngle, endAngle);
                 ctx.lineTo(center, center);
@@ -116,31 +179,62 @@
                 ctx.rotate(textAngle);
                 ctx.textAlign = "right";
                 ctx.fillStyle = "#fff";
-                ctx.font = "bold 15px Arial";
-                ctx.fillText(displayPrizes[i], radius - 20, 6);
+                ctx.font = "bold 14px Arial";
+                ctx.fillText(prizesConfig[i].name, radius - 15, 5);
                 ctx.restore();
             }
         }
 
-        // 初始化繪製
         drawWheel();
+
+        // 播放歡慶短音效 (Web Audio API)
+        function playWinSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 (歡樂和弦)
+                notes.forEach((freq, index) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.value = freq;
+                    
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime + index * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + index * 0.1 + 0.3);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start(audioCtx.currentTime + index * 0.1);
+                    osc.stop(audioCtx.currentTime + index * 0.1 + 0.3);
+                });
+            } catch(e) {
+                console.log("Audio not supported or blocked", e);
+            }
+        }
+
+        // 根據權重隨機挑選獎項索引
+        function getRandomIndexByWeight() {
+            let totalWeight = prizesConfig.reduce((sum, item) => sum + item.weight, 0);
+            let randomNum = Math.random() * totalWeight;
+            
+            for (let i = 0; i < prizesConfig.length; i++) {
+                if (randomNum < prizesConfig.weight) {
+                    return i;
+                }
+                randomNum -= prizesConfig.weight;
+            }
+            return 0;
+        }
 
         function spinWheel() {
             const btn = document.getElementById("spinBtn");
-            const resultDiv = document.getElementById("result");
-            
             btn.disabled = true;
-            resultDiv.innerText = "轉動中...";
 
-            // 2. 透過加權隨機池來控制中獎機率（表面上看不出來，但增加貼紙與小筆記本權重的出現率）
-            // 權重分配：十色筆(1), 卡通膠擦(1), 立體迷宮(1), 小筆記本(3), 貼紙(3)
-            const weightedPool = [0, 1, 2, 3, 3, 3, 4, 4, 4];
-            const winningIndex = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+            // 1. 根據權重取得中獎索引
+            const winningIndex = getRandomIndexByWeight();
             
-            // 3. 計算該扇形中心點在轉盤上的目標角度
+            // 2. 計算轉動角度
             const prizeCenterAngle = winningIndex * arcSize + arcSize / 2;
-            
-            // 4. 計算轉動角度（1 秒動畫，保留 3 圈旋轉）
             const extraSpins = 360 * 3;
             const targetRotation = extraSpins + (360 - prizeCenterAngle);
             
@@ -150,11 +244,20 @@
 
             canvas.style.transform = `rotate(${currentRotation}deg)`;
 
-            // 5. 動畫結束後顯示結果 (1 秒後)
+            // 3. 動畫結束後（1 秒後）彈出視窗並播放音效
             setTimeout(() => {
                 btn.disabled = false;
-                resultDiv.innerText = `🎊 恭喜獲得：${displayPrizes[winningIndex]}！ 🎊`;
+                playWinSound(); // 播放慶祝音效
+                
+                // 顯示彈跳視窗
+                document.getElementById("modalText").innerText = `恭喜獲得：${prizesConfig[winningIndex].name}！`;
+                document.getElementById("resultModal").style.display = "flex";
             }, 1000);
+        }
+
+        // 關閉彈跳視窗
+        function closeModal() {
+            document.getElementById("resultModal").style.display = "none";
         }
     </script>
 
