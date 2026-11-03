@@ -5,13 +5,16 @@
     <title>趣味幸運轉盤</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Arial, sans-serif;
             text-align: center;
-            background-color: #f4f7f6;
+            background-color: #f7f9fb;
             margin-top: 30px;
         }
         h1 {
-            color: #333;
+            color: #2c3e50;
+        }
+        p {
+            color: #555;
         }
         .container {
             position: relative;
@@ -29,32 +32,35 @@
             height: 0;
             border-left: 15px solid transparent;
             border-right: 15px solid transparent;
-            border-top: 30px solid #d9534f;
+            border-top: 30px solid #e74c3c;
             z-index: 10;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.15));
         }
         /* 轉盤本體 - 1 秒動畫 */
         canvas {
             border-radius: 50%;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
             transition: transform 1s cubic-bezier(0.15, 0.85, 0.15, 1);
         }
         button.spin-btn {
-            padding: 12px 25px;
+            padding: 12px 30px;
             font-size: 18px;
-            background-color: #5cb85c;
+            background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 25px;
             cursor: pointer;
-            margin-top: 20px;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            margin-top: 25px;
+            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+            transition: background 0.2s;
         }
         button.spin-btn:hover {
-            background-color: #4cae4c;
+            background-color: #43a047;
         }
         button.spin-btn:disabled {
             background-color: #ccc;
             cursor: not-allowed;
+            box-shadow: none;
         }
 
         /* 彈跳視窗（Modal）樣式 */
@@ -66,16 +72,16 @@
             top: 0;
             width: 100%; 
             height: 100%; 
-            background-color: rgba(0,0,0,0.5); 
+            background-color: rgba(0,0,0,0.4); 
             justify-content: center;
             align-items: center;
         }
         .modal-content {
             background-color: #fff;
-            padding: 30px 50px;
-            border-radius: 12px;
+            padding: 35px 50px;
+            border-radius: 16px;
             text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             transform: scale(0.7);
             animation: popupAnim 0.3s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
@@ -83,33 +89,35 @@
             to { transform: scale(1); }
         }
         .modal-content h2 {
-            color: #d9534f;
+            color: #e74c3c;
             margin-top: 0;
-            font-size: 28px;
+            font-size: 26px;
         }
         .modal-content p {
             font-size: 24px;
             font-weight: bold;
-            color: #333;
+            color: #2c3e50;
             margin: 20px 0;
         }
         .close-btn {
-            padding: 8px 20px;
+            padding: 10px 25px;
             font-size: 16px;
-            background-color: #f0ad4e;
+            background-color: #ff9800;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 20px;
             cursor: pointer;
+            box-shadow: 0 3px 8px rgba(255, 152, 0, 0.3);
         }
         .close-btn:hover {
-            background-color: #ec971f;
+            background-color: #f57c00;
         }
     </style>
 </head>
 <body>
 
     <h1>🎉 幸運大抽獎 🎉</h1>
+    <p>獎品：十色筆、卡通膠擦、立體迷宮、小筆記本、貼紙</p>
     
     <div class="container">
         <div class="pointer"></div>
@@ -130,19 +138,16 @@
     <script>
         /* 
           ========================================
-          🎁 獎品與權重設定區 (可隨時在此自由修改)
+          🎁 獎品、柔和馬卡龍配色與權重設定區
           ========================================
-          - name: 獎品名稱
-          - color: 轉盤上的扇形顏色
-          - weight: 權重數值（數值越高，抽中的機會越大！不需考慮總和比例，系統會自動計算）
         */
         const prizesConfig = [
-            { name: "十色筆",   color: "#FF6B6B", weight: 2 },
-            { name: "卡通膠擦", color: "#4ECDC4", weight: 2 },
-            { name: "立體迷宮", color: "#FFD166", weight: 2 },
-            { name: "小筆記本", color: "#FF6B6B", weight: 3 }, 
-            { name: "刮刮畫本", color: "#4ECDC4", weight: 1 }, 
-            { name: "貼紙",     color: "#118AB2", weight: 4 } 
+            { name: "十色筆",   color: "#FF8B8B", weight: 3 }, // 柔和珊瑚紅
+            { name: "卡通膠擦", color: "#6BE7DC", weight: 1 }, // 粉嫩薄荷綠
+            { name: "立體迷宮", color: "#FFE57F", weight: 1 }, // 暖心鵝黃
+            { name: "小筆記本", color: "#85E3B8", weight: 2 }, // 清新酪梨綠
+            { name: "貼紙",     color: "#78C1F3", weight: 3 }  // 天空粉藍
+            { name: "刮刮畫簿",  color: "#FFDAC1", weight: 1 }
         ];
 
         const canvas = document.getElementById("wheel");
@@ -169,6 +174,10 @@
                 ctx.arc(center, center, radius, startAngle, endAngle);
                 ctx.lineTo(center, center);
                 ctx.fill();
+                
+                // 加上淡淡的扇形邊線增加立體感
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = "#ffffff";
                 ctx.stroke();
 
                 // 繪製文字
@@ -177,8 +186,8 @@
                 const textAngle = ((i + 0.5) * arcSize - 90) * Math.PI / 180;
                 ctx.rotate(textAngle);
                 ctx.textAlign = "right";
-                ctx.fillStyle = "#fff";
-                ctx.font = "bold 14px Arial";
+                ctx.fillStyle = "#2c3e50"; // 文字改用深色，在馬卡龍淺色背景上更清晰
+                ctx.font = "bold 14px 'Segoe UI', Arial";
                 ctx.fillText(prizesConfig[i].name, radius - 15, 5);
                 ctx.restore();
             }
@@ -190,7 +199,7 @@
         function playWinSound() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 (歡樂和弦)
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
                 notes.forEach((freq, index) => {
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
@@ -211,16 +220,16 @@
             }
         }
 
-        // 根據權重隨機挑選獎項索引
+        // 權重隨機抽樣演算法
         function getRandomIndexByWeight() {
-            let totalWeight = prizesConfig.reduce((sum, item) => sum + item.weight, 0);
+            const totalWeight = prizesConfig.reduce((sum, item) => sum + item.weight, 0);
             let randomNum = Math.random() * totalWeight;
             
             for (let i = 0; i < prizesConfig.length; i++) {
-                if (randomNum < prizesConfig.weight) {
+                if (randomNum < prizesConfig[i].weight) {
                     return i;
                 }
-                randomNum -= prizesConfig.weight;
+                randomNum -= prizesConfig[i].weight;
             }
             return 0;
         }
@@ -229,10 +238,8 @@
             const btn = document.getElementById("spinBtn");
             btn.disabled = true;
 
-            // 1. 根據權重取得中獎索引
             const winningIndex = getRandomIndexByWeight();
             
-            // 2. 計算轉動角度
             const prizeCenterAngle = winningIndex * arcSize + arcSize / 2;
             const extraSpins = 360 * 3;
             const targetRotation = extraSpins + (360 - prizeCenterAngle);
@@ -243,18 +250,15 @@
 
             canvas.style.transform = `rotate(${currentRotation}deg)`;
 
-            // 3. 動畫結束後（1 秒後）彈出視窗並播放音效
             setTimeout(() => {
                 btn.disabled = false;
-                playWinSound(); // 播放慶祝音效
+                playWinSound();
                 
-                // 顯示彈跳視窗
                 document.getElementById("modalText").innerText = `恭喜獲得：${prizesConfig[winningIndex].name}！`;
                 document.getElementById("resultModal").style.display = "flex";
             }, 1000);
         }
 
-        // 關閉彈跳視窗
         function closeModal() {
             document.getElementById("resultModal").style.display = "none";
         }
